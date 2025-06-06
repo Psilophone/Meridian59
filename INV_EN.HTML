@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>Gestion d'inventaire - 4 personnages</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 900px; margin: auto; padding: 1rem; background: #f0f0f0; }
+  h1 { text-align: center; }
+  .character { background: white; border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; border-radius: 6px; }
+  label { display: block; margin: 0.5rem 0 0.2rem; }
+  input[type=text], input[type=number], select { padding: 0.3rem; font-size: 1rem; width: 100%; max-width: 300px; }
+  button { margin-top: 0.5rem; padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer; }
+  ul { padding-left: 1.2rem; }
+  .overload { color: red; font-weight: bold; }
+  .flex-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .stats { margin-top: 0.5rem; }
+</style>
+</head>
+<body>
+
+<h1>Inventory Management for 4 Characters</h1>
+
+<div id="app"></div>
+
+<script>
+// Base de données items complète, poids à 0 si inconnu
+const itemsDB = [
+  { name: "Alembic of free action", weight: 20 },
+  { name: "Amulet of Shadows", weight: 25 },
+  { name: "Ancient Shield", weight: 0 },
+  { name: "Anonymity Potion", weight: 20 },
+  { name: "Ant Mask", weight: 10 },
+  { name: "Apple", weight: 6 },
+  { name: "Arrows", weight: 4 },
+  { name: "Axe", weight: 90 },
+  { name: "Battle Bow", weight: 80 },
+  { name: "Berserker Ring", weight: 10 },
+  { name: "Black Dagger", weight: 30 },
+  { name: "Blood of the Innocent", weight: 0 },
+  { name: "Blue Dragon Scale", weight: 10 },
+  { name: "Blue Mushroom", weight: 5 },
+  { name: "Book", weight: 10 },
+  { name: "Bottle of lies", weight: 0 },
+  { name: "Bowl of Soup", weight: 20 },
+  { name: "Bowl of Stew", weight: 20 },
+  { name: "Brass Medallion", weight: 25 },
+  { name: "Brown Potion", weight: 20 },
+  { name: "Bunch of Grapes", weight: 9 },
+  { name: "Burning Water", weight: 0 },
+  { name: "Chain Armor", weight: 250 },
+  { name: "Chalice of Rain", weight: 40 },
+  { name: "Chessboard", weight: 30 },
+  { name: "Chocolate Mint", weight: 10 },
+  { name: "Chunk of Nerudite", weight: 300 },
+  { name: "Chunk of Ore", weight: 600 },
+  { name: "Circlet", weight: 20 },
+  { name: "Copper Pekonch Mugs", weight: 15 },
+  { name: "Crystal Sphere", weight: 500 },
+  { name: "Cure Disease Potion", weight: 20 },
+  { name: "Cure Poison Potion", weight: 20 },
+  { name: "Daemon Skeleton Mask", weight: 10 },
+  { name: "Dark Angel Feather", weight: 4 },
+  { name: "Demon Skull", weight: 500 },
+  { name: "Diamond", weight: 1 },
+  { name: "Diamond Pendant", weight: 25 },
+  { name: "Dragonfly Eye", weight: 3 },
+  { name: "Drum Stick", weight: 15 },
+  { name: "Edible Mushroom", weight: 10 },
+  { name: "Egg", weight: 30 },
+  { name: "Egg Shell", weight: 20 },
+  { name: "Elderberry", weight: 3 },
+  { name: "Elixir of Cloaking", weight: 20 },
+  { name: "Elixir of Magical Resistance", weight: 20 },
+  { name: "Emerald", weight: 1 },
+  { name: "Entroot Berries", weight: 2 },
+  { name: "Fairy Wing", weight: 5 },
+  { name: "Feathered Choker", weight: 25 },
+  { name: "Feline Vitreous Humor", weight: 20 },
+  { name: "Fey Mask", weight: 10 },
+  { name: "Fine Lute", weight: 50 },
+  { name: "Firesand", weight: 4 },
+  { name: "Fortune Cookie", weight: 2 },
+  { name: "Gauntlets", weight: 50 },
+  { name: "Gift", weight: 50 },
+  { name: "Glass Pendant", weight: 0 },
+  { name: "Gnarled Staff", weight: 40 },
+  { name: "Goblet of Ale", weight: 12 },
+  { name: "Goblet of Wine", weight: 12 },
+  { name: "Gold Room Key", weight: 0 },
+  { name: "Gold Round Shield", weight: 225 },
+  { name: "Gold Sword", weight: 90 },
+  { name: "Gold Urn", weight: 0 },
+  { name: "Hammer", weight: 75 },
+  { name: "Healing Potion", weight: 20 },
+  { name: "Heartstone", weight: 35 },
+  { name: "Helm", weight: 50 },
+  { name: "Herald Shield", weight: 150 },
+  { name: "Herb", weight: 4 },
+  { name: "Inky-Cap Mushroom", weight: 10 },
+  { name: "Invitation", weight: 0 },
+  { name: "Iron Key", weight: 0 },
+  { name: "Ivy Circlet", weight: 20 },
+  { name: "Jade Cat", weight: 500 },
+  { name: "Jewel of Froz", weight: 15 },
+  { name: "Jeweled Egg", weight: 500 },
+  { name: "Karahol's Accursed Elixir", weight: 20 },
+  { name: "Ketchikan Hoop", weight: 0 },
+  { name: "Key", weight: 10 },
+  { name: "Knight's Shield", weight: 200 },
+  { name: "Kriipa Claw", weight: 4 },
+  { name: "Kriipa Mask", weight: 10 },
+  { name: "Leather Armor", weight: 150 },
+  { name: "Light Jerkin", weight: 50 },
+  { name: "Light Robe", weight: 125 },
+  { name: "Lightning Wand", weight: 5 },
+  { name: "Loaf of Bread", weight: 20 },
+  { name: "Long Bow", weight: 80 },
+  { name: "Long Skirt", weight: 120 },
+  { name: "Long Sword", weight: 75 },
+  { name: "Lute", weight: 50 },
+  { name: "Mace", weight: 60 },
+  { name: "Magic Spirit Helm", weight: 50 },
+  { name: "Mana Crystal", weight: 5 },
+  { name: "Meat Pie", weight: 20 },
+  { name: "Minjaka Vase", weight: 0 },
+  { name: "Monocle", weight: 25 },
+  { name: "Mug of Stout", weight: 10 },
+  { name: "Mummy Mask", weight: 10 },
+  { name: "Mushroom", weight: 5 },
+  { name: "Mystic Sword", weight: 80 },
+  { name: "Necklace of Jala", weight: 150 },
+  { name: "Nerudite Armor", weight: 500 },
+  { name: "Nerudite Arrow", weight: 5 },
+  { name: "Nerudite Bow", weight: 100 },
+  { name: "Nerudite Sword", weight: 80 },
+  { name: "Orc Pit Boss Head", weight: 100 },
+  { name: "Orc Shield", weight: 200 },
+  { name: "Orc Tooth", weight: 4 },
+  { name: "Pants", weight: 20 },
+  { name: "Plate Armor", weight: 600 },
+  { name: "Poison Flask", weight: 20 },
+  { name: "Polished Seraphym", weight: 3 },
+  { name: "Possum Potion", weight: 20 },
+  { name: "Potion of Acid Resistance", weight: 20 },
+  { name: "Potion of Cold Resistance", weight: 20 },
+  { name: "Potion of Deflection", weight: 20 },
+  { name: "Potion of Deliverance", weight: 20 },
+  { name: "Potion of Denial", weight: 20 },
+  { name: "Potion of Evil Detection", weight: 20 },
+  { name: "Potion of Forgetfulness", weight: 20 },
+  { name: "Potion of Good Detection", weight: 20 },
+  { name: "Potion of Haste", weight: 20 },
+  { name: "Potion of Invisibility Detection", weight: 20 },
+  { name: "Potion of Noncondictivity", weight: 20 },
+  { name: "Potion of Poison Resistance", weight: 20 },
+  { name: "Potion of Purification", weight: 20 },
+  { name: "Potion of Shielding", weight: 20 },
+  { name: "Potion of Super Strength", weight: 20 },
+  { name: "Practice Bow", weight: 60 },
+  { name: "Priceless Heirloom of Barloque", weight: 0 },
+  { name: "Prism", weight: 10 },
+  { name: "Pungent Elixir", weight: 20 },
+  { name: "Purple Mushroom", weight: 5 },
+  { name: "Rainbow Fern", weight: 5 },
+  { name: "Rat Mask", weight: 10 },
+  { name: "Red Mushroom", weight: 5 },
+  { name: "Relic of Qor", weight: 50 },
+  { name: "Remove Curse Potion", weight: 20 },
+  { name: "Ring of Acid Resistance", weight: 10 },
+  { name: "Ring of Cold Resistance", weight: 10 },
+  { name: "Ring of Exotic Metal", weight: 10 },
+  { name: "Ring of Far'nohl", weight: 10 },
+  { name: "Ring of Fire Resistance", weight: 10 },
+  { name: "Ring of Invisibility", weight: 10 },
+  { name: "Ring of Lethargy", weight: 10 },
+  { name: "Ring of Shock Resistance", weight: 10 },
+  { name: "Robes", weight: 150 },
+  { name: "Robes of the Disciple", weight: 160 },
+  { name: "Rose", weight: 10 },
+  { name: "Royal Ballot", weight: 2 },
+  { name: "Royal Shirt", weight: 80 },
+  { name: "Ruby", weight: 1 },
+  { name: "Runed Coffer", weight: 500 },
+  { name: "Rusty Armor", weight: 0 },
+  { name: "Sapphire", weight: 1 },
+  { name: "Scale Armor", weight: 350 },
+  { name: "Scimitar", weight: 70 },
+  { name: "Scrap Metal", weight: 0 },
+  { name: "Scroll of Darkness", weight: 10 },
+  { name: "Scroll of Discord", weight: 10 },
+  { name: "Scroll of Dispel Illusion", weight: 10 },
+  { name: "Scroll of Flash", weight: 10 },
+  { name: "Scroll of Heat", weight: 10 },
+  { name: "Scroll of Killing Fields", weight: 10 },
+  { name: "Scroll of Light", weight: 10 },
+  { name: "Scroll of Martyr's Battleground", weight: 10 },
+  { name: "Scroll of Poison Fog", weight: 10 },
+  { name: "Scroll of Spore Burst", weight: 10 },
+  { name: "Scroll of Truce", weight: 10 },
+  { name: "Shadow Form Potion", weight: 20 },
+  { name: "Shaman Blood", weight: 5 },
+  { name: "Shaman Feather", weight: 5 },
+  { name: "Shilling", weight: 0 },
+  { name: "Shirt", weight: 80 },
+  { name: "Short Skirt", weight: 70 },
+  { name: "Short Sword", weight: 50 },
+  { name: "Shrunken Head", weight: 10 },
+  { name: "Shrunken Head Mask", weight: 10 },
+  { name: "Signet Ring", weight: 1 },
+  { name: "Silver Arrows", weight: 5 },
+  { name: "Silver Room Key", weight: 0 },
+  { name: "Skull Mask", weight: 10 },
+  { name: "Slice of Pork", weight: 9 },
+  { name: "Small Round Shield", weight: 125 },
+  { name: "Spider Eyes", weight: 9 },
+  { name: "Steel Torc", weight: 25 },
+  { name: "Succulent Salve", weight: 20 },
+  { name: "Surplus Legion Helmet", weight: 0 },
+  { name: "Sweat of the Warrior King", weight: 0 },
+  { name: "Sword of Riija", weight: 95 },
+  { name: "Tanned Kriipa Leather", weight: 0 },
+  { name: "Tears of a Newborn", weight: 0 },
+  { name: "The Emperor's Chalice", weight: 0 },
+  { name: "The Widow Qesino's Secret Sauce", weight: 20 },
+  { name: "Torch", weight: 10 },
+  { name: "Totem", weight: 0 },
+  { name: "Troll Mask", weight: 10 },
+  { name: "True Lute", weight: 50 },
+  { name: "Turkey Leg", weight: 10 },
+  { name: "Uncut Seraphym", weight: 5 },
+  { name: "Undecipherable Book", weight: 0 },
+  { name: "Undershirt", weight: 80 },
+  { name: "Vial of Perfume", weight: 10 },
+  { name: "Vial of Saccaqua", weight: 10 },
+  { name: "Vial of Solagh", weight: 10 },
+  { name: "Wand of Blinding", weight: 5 },
+  { name: "Wand of Branding", weight: 5 },
+  { name: "Wand of Charming", weight: 5 },
+  { name: "Wand of Dementia", weight: 5 },
+  { name: "Wand of Destruction", weight: 5 },
+  { name: "Wand of Filching", weight: 5 },
+  { name: "Wand of Fire", weight: 25 },
+  { name: "Wand of Forgetfulness", weight: 5 },
+  { name: "Wand of Healing", weight: 25 },
+  { name: "Wand of Identification", weight: 5 },
+  { name: "Wand of Immobiliation", weight: 5 },
+  { name: "Wand of Magical Cleansing", weight: 5 },
+  { name: "Wand of Rejuvenation", weight: 5 },
+  { name: "Wand of Striking", weight: 5 },
+  { name: "Wand of Vampiric Shock", weight: 25 },
+  { name: "Wand of Weakness", weight: 5 },
+  { name: "Wand of Weapon Weakening", weight: 5 },
+  { name: "Wand of Wrinkling", weight: 5 },
+  { name: "Water Finding Arrow", weight: 0 },
+  { name: "Water Skin", weight: 15 },
+  { name: "Web Moss", weight: 3 },
+  { name: "Wedding Ring", weight: 3 },
+  { name: "Wheel of Cheese", weight: 30 },
+  { name: "Xeochicatl Mask", weight: 10 },
+  { name: "Yrxl Sap", weight: 5 },
+];
+
+// Nombre de personnages
+const maxCharacters = 4;
+// Poids de base
+const maxSpaceBase = 1700;
+
+const app = document.getElementById('app');
+
+function createCharacterInventory(id) {
+  const savedData = JSON.parse(localStorage.getItem(`character-${id}`)) || {};
+  const container = document.createElement('div');
+  container.className = 'character';
+
+  container.innerHTML = `
+    <label>Character Name :
+      <input type="text" id="name-${id}" value="${savedData.name || ''}" placeholder="Entrez un nom" />
+    </label>
+    <label>Strength (Might) :
+      <input type="number" id="might-${id}" min="0" value="${savedData.might ?? 40}" />
+    </label>
+    <div class="flex-row">
+      <select id="item-select-${id}">
+        <option value="">-- Choose an item --</option>
+        ${itemsDB.map(item => `<option value="${item.name}">${item.name}</option>`).join('')}
+      </select>
+      <input type="number" id="quantity-${id}" min="1" value="1" style="width:60px" />
+      <button id="add-btn-${id}">Add</button>
+    </div>
+    <h3>Inventory :</h3>
+    <ul id="inventory-list-${id}"></ul>
+    <div class="stats">
+      <p>Max Weight : <span id="max-weight-${id}">${maxSpaceBase + ((savedData.might ?? 40) * 20)}</span></p>
+      <p>Total Weight : <span id="total-weight-${id}">0</span> <span id="overload-${id}"></span></p>
+    </div>
+  `;
+
+  // Gestion inventaire interne
+  let inventory = savedData.inventory || [];
+
+  const nameInput = container.querySelector(`#name-${id}`);
+  const mightInput = container.querySelector(`#might-${id}`);
+  const itemSelect = container.querySelector(`#item-select-${id}`);
+  const quantityInput = container.querySelector(`#quantity-${id}`);
+  const addBtn = container.querySelector(`#add-btn-${id}`);
+  const inventoryList = container.querySelector(`#inventory-list-${id}`);
+  const maxWeightSpan = container.querySelector(`#max-weight-${id}`);
+  const totalWeightSpan = container.querySelector(`#total-weight-${id}`);
+  const overloadSpan = container.querySelector(`#overload-${id}`);
+
+  function save() {
+    const dataToSave = {
+      name: nameInput.value.trim(),
+      might: Number(mightInput.value),
+      inventory,
+    };
+    localStorage.setItem(`character-${id}`, JSON.stringify(dataToSave));
+  }
+
+  function getItemWeight(name) {
+    const item = itemsDB.find(i => i.name === name);
+    return item ? item.weight : 0;
+  }
+
+  function updateDisplay() {
+    inventoryList.innerHTML = '';
+    let totalWeight = 0;
+
+    inventory.forEach((item, idx) => {
+      const weight = getItemWeight(item.name) * item.qty;
+      totalWeight += weight;
+      const li = document.createElement('li');
+      li.textContent = `${item.name} x${item.qty} (poids: ${weight})`;
+      // Bouton supprimer
+      const delBtn = document.createElement('button');
+      delBtn.textContent = 'Remove';
+      delBtn.style.marginLeft = '10px';
+      delBtn.onclick = () => {
+        inventory.splice(idx, 1);
+        save();
+        updateDisplay();
+      };
+      li.appendChild(delBtn);
+      inventoryList.appendChild(li);
+    });
+
+    totalWeightSpan.textContent = totalWeight;
+    const maxWeight = maxSpaceBase + (Number(mightInput.value) * 20);
+    maxWeightSpan.textContent = maxWeight;
+
+    if (totalWeight > maxWeight) {
+      overloadSpan.textContent = ' (Overloaded!)';
+      overloadSpan.className = 'overload';
+    } else {
+      overloadSpan.textContent = '';
+      overloadSpan.className = '';
+    }
+  }
+
+  addBtn.onclick = () => {
+    const itemName = itemSelect.value;
+    const qty = Number(quantityInput.value);
+    if (!itemName) {
+      alert('Please choose an item.');
+      return;
+    }
+    if (!qty || qty < 1) {
+      alert('Invalid quantity.');
+      return;
+    }
+    // Si item déjà présent, additionner quantité
+    const existing = inventory.find(i => i.name === itemName);
+    if (existing) {
+      existing.qty += qty;
+    } else {
+      inventory.push({ name: itemName, qty });
+    }
+    save();
+    updateDisplay();
+  };
+
+  mightInput.onchange = () => {
+    if (mightInput.value < 0) mightInput.value = 0;
+    save();
+    updateDisplay();
+  };
+
+  nameInput.onchange = () => {
+    save();
+  };
+
+  updateDisplay();
+
+  return container;
+}
+
+function init() {
+  for (let i = 1; i <= maxCharacters; i++) {
+    const charInv = createCharacterInventory(i);
+    app.appendChild(charInv);
+  }
+}
+
+init();
+</script>
+
+</body>
+</html>
